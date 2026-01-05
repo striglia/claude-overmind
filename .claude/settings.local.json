@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(afplay:*)",
+      "Bash(jq:*)",
+      "Bash(md5:*)",
+      "Bash(brew:*)",
+      "Bash(chmod:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}
