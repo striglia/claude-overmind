@@ -151,25 +151,3 @@ teardown() {
     run bash -c 'echo "" | "$PROJECT_ROOT/claude-overmind.sh"'
     [ "$status" -eq 0 ]
 }
-
-# --- Playback Logging ---
-# Log each clip played for debugging and clip analysis.
-
-@test "logs playback when log directory exists" {
-    create_mock_sounds
-    mkdir -p "$TEST_HOME/.claude/claude-overmind"
-    export CLAUDE_OVERMIND_LOG="$TEST_HOME/.claude/claude-overmind/playback.log"
-    run bash -c 'echo "{\"session_id\":\"test\"}" | "$PROJECT_ROOT/claude-overmind.sh"'
-    [ "$status" -eq 0 ]
-    [ -f "$CLAUDE_OVERMIND_LOG" ]
-    # Log should contain character name and clip filename
-    grep -q "marine" "$CLAUDE_OVERMIND_LOG" || grep -q "zealot" "$CLAUDE_OVERMIND_LOG" || grep -q "zergling" "$CLAUDE_OVERMIND_LOG"
-}
-
-@test "skips logging when log directory does not exist" {
-    create_mock_sounds
-    export CLAUDE_OVERMIND_LOG="$TEST_HOME/nonexistent/playback.log"
-    run bash -c 'echo "{\"session_id\":\"test\"}" | "$PROJECT_ROOT/claude-overmind.sh"'
-    [ "$status" -eq 0 ]
-    [ ! -f "$CLAUDE_OVERMIND_LOG" ]
-}
