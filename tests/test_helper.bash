@@ -1,10 +1,18 @@
 #!/bin/bash
 # Test helper functions and setup for BATS tests
+#
+# Philosophy:
+# - Tests should run in isolation without affecting the real system
+# - Mock external commands (afplay, md5) to avoid side effects
+# - Use temporary directories for all file operations
+# - Save references to real commands before PATH manipulation
+#   (needed because some tests verify behavior when tools are missing)
 
 # Project root directory
 export PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # Save paths to essential commands at load time (before any PATH manipulation)
+# This is necessary because some tests manipulate PATH to simulate missing tools
 REAL_MKDIR=$(command -v mkdir)
 REAL_RM=$(command -v rm)
 REAL_MKTEMP=$(command -v mktemp)

@@ -1,5 +1,20 @@
 #!/usr/bin/env bats
+#
 # Tests for claude-overlord.sh - the main hook script
+#
+# What we test:
+# - Graceful degradation when dependencies (jq) or resources (sounds) are missing
+# - Core behavior: character selection, sound file discovery, event mapping
+# - Input handling: valid JSON, malformed input, missing fields
+#
+# What we don't test:
+# - Actual audio playback (mocked via mock_afplay)
+# - Randomness of sound selection (non-deterministic, not worth testing)
+#
+# Why these tests matter:
+# This script runs as a Claude Code hook. If it crashes or hangs, it blocks
+# the user's workflow. These tests verify it always exits cleanly (exit 0)
+# even when things go wrong.
 
 load 'test_helper'
 
@@ -13,7 +28,9 @@ teardown() {
     teardown_test_env
 }
 
-# --- Dependency Tests ---
+# --- Graceful Degradation ---
+# The hook must never crash or hang. These tests verify it exits cleanly
+# when dependencies or resources are missing.
 
 @test "exits gracefully when jq is not available" {
     mock_no_jq
@@ -22,15 +39,11 @@ teardown() {
 }
 
 @test "outputs error message when jq is missing" {
-    # Use mock_no_jq to properly set up environment without jq
     mock_no_jq
-
     run bash -c 'echo "{}" | "$PROJECT_ROOT/claude-overlord.sh" 2>&1'
     [ "$status" -eq 0 ]
     [[ "$output" == *"jq"* ]]
 }
-
-# --- Sound Directory Tests ---
 
 @test "exits gracefully when sounds directory does not exist" {
     export CLAUDE_OVERLORD_SOUNDS="/nonexistent/path"
@@ -51,50 +64,38 @@ teardown() {
     [ "$status" -eq 0 ]
 }
 
-# --- Character Selection Tests ---
+# --- Core Behavior ---
+# These tests verify the main functionality works correctly.
 
-@test "selects a character when sounds are available" {
+@test "plays a sound when sounds are available" {
     create_mock_sounds
     run bash -c 'echo "{\"session_id\":\"test\"}" | "$PROJECT_ROOT/claude-overlord.sh"'
     [ "$status" -eq 0 ]
     [[ "$output" == *"MOCK_AFPLAY"* ]]
 }
 
-@test "selects same character for same session_id (deterministic)" {
-    create_mock_sounds
-
-    # Run twice with same session_id
-    run1=$(echo '{"session_id":"session123"}' | "$PROJECT_ROOT/claude-overlord.sh")
-    run2=$(echo '{"session_id":"session123"}' | "$PROJECT_ROOT/claude-overlord.sh")
-
-    # Both should produce output (character was selected)
-    [ -n "$run1" ]
-    [ -n "$run2" ]
-}
-
-@test "uses default session_id when not provided" {
+@test "uses default session_id when not provided in input" {
     create_mock_sounds
     run bash -c 'echo "{}" | "$PROJECT_ROOT/claude-overlord.sh"'
     [ "$status" -eq 0 ]
     [[ "$output" == *"MOCK_AFPLAY"* ]]
 }
 
-# --- Event Mapping Tests ---
+# --- Event Mapping ---
+# Notification events should play "idle" sounds (questioning tone)
+# Stop events should play "complete" sounds (confirmation tone)
 
 @test "maps Notification event to idle sound category" {
     create_mock_sounds
     create_event_sounds
-
     run bash -c 'echo "{\"session_id\":\"test\",\"hook_event_name\":\"Notification\"}" | "$PROJECT_ROOT/claude-overlord.sh"'
     [ "$status" -eq 0 ]
-    # Should play from idle directory
-    [[ "$output" == *"idle"* ]] || [[ "$output" == *"MOCK_AFPLAY"* ]]
+    [[ "$output" == *"MOCK_AFPLAY"* ]]
 }
 
 @test "maps Stop event to complete sound category" {
     create_mock_sounds
     create_event_sounds
-
     run bash -c 'echo "{\"session_id\":\"test\",\"hook_event_name\":\"Stop\"}" | "$PROJECT_ROOT/claude-overlord.sh"'
     [ "$status" -eq 0 ]
     [[ "$output" == *"MOCK_AFPLAY"* ]]
@@ -102,21 +103,19 @@ teardown() {
 
 @test "falls back to root directory when event-specific dir is empty" {
     create_mock_sounds
-    # Create empty idle directory
     mkdir -p "$TEST_SOUNDS_DIR/marine/idle"
-    # No files in idle, should fall back to root marine directory
-
+    # idle directory exists but is empty - should fall back to marine/
     run bash -c 'echo "{\"session_id\":\"test\",\"hook_event_name\":\"Notification\"}" | "$PROJECT_ROOT/claude-overlord.sh"'
     [ "$status" -eq 0 ]
     [[ "$output" == *"MOCK_AFPLAY"* ]]
 }
 
-# --- Sound File Format Tests ---
+# --- Sound File Discovery ---
+# Verify all supported audio formats are found.
 
 @test "finds .wav files" {
     mkdir -p "$TEST_SOUNDS_DIR/marine"
     touch "$TEST_SOUNDS_DIR/marine/ready.wav"
-
     run bash -c 'echo "{\"session_id\":\"test\"}" | "$PROJECT_ROOT/claude-overlord.sh"'
     [ "$status" -eq 0 ]
     [[ "$output" == *"ready.wav"* ]]
@@ -125,27 +124,25 @@ teardown() {
 @test "finds .mp3 files" {
     mkdir -p "$TEST_SOUNDS_DIR/zergling"
     touch "$TEST_SOUNDS_DIR/zergling/hiss.mp3"
-
-    run bash -c 'echo "{\"session_id\":\"test\"}" | "$PROJECT_ROOT/claude-overlord.sh"'
-    [ "$status" -eq 0 ]
-    [[ "$output" == *".mp3"* ]] || [[ "$output" == *"MOCK_AFPLAY"* ]]
-}
-
-@test "finds .aiff files" {
-    mkdir -p "$TEST_SOUNDS_DIR/zealot"
-    touch "$TEST_SOUNDS_DIR/zealot/foraiur.aiff"
-
     run bash -c 'echo "{\"session_id\":\"test\"}" | "$PROJECT_ROOT/claude-overlord.sh"'
     [ "$status" -eq 0 ]
     [[ "$output" == *"MOCK_AFPLAY"* ]]
 }
 
-# --- JSON Parsing Tests ---
+@test "finds .aiff files" {
+    mkdir -p "$TEST_SOUNDS_DIR/zealot"
+    touch "$TEST_SOUNDS_DIR/zealot/foraiur.aiff"
+    run bash -c 'echo "{\"session_id\":\"test\"}" | "$PROJECT_ROOT/claude-overlord.sh"'
+    [ "$status" -eq 0 ]
+    [[ "$output" == *"MOCK_AFPLAY"* ]]
+}
+
+# --- Input Handling ---
+# The hook receives JSON via stdin. It should handle bad input gracefully.
 
 @test "handles malformed JSON gracefully" {
     create_mock_sounds
     run bash -c 'echo "not valid json" | "$PROJECT_ROOT/claude-overlord.sh"'
-    # Should not crash, jq returns null for invalid json
     [ "$status" -eq 0 ]
 }
 

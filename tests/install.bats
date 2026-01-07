@@ -1,5 +1,20 @@
 #!/usr/bin/env bats
+#
 # Tests for install.sh - the installation script
+#
+# What we test:
+# - Directory structure creation (~/.claude/hooks, ~/.claude/claude-overlord/sounds)
+# - File copying and permissions
+# - settings.json creation and merging
+# - Idempotency (safe to run multiple times)
+#
+# What we don't test:
+# - Actual Claude Code integration (requires Claude Code to be running)
+#
+# Why these tests matter:
+# Installation failures leave users with a broken setup. These tests verify
+# the installer creates the correct structure and handles edge cases like
+# existing settings.json files.
 
 load 'test_helper'
 
@@ -16,7 +31,8 @@ teardown() {
     teardown_test_env
 }
 
-# --- Directory Creation Tests ---
+# --- Directory Structure ---
+# The installer must create the expected directory hierarchy.
 
 @test "creates hooks directory" {
     run "$PROJECT_ROOT/install.sh"
@@ -30,7 +46,8 @@ teardown() {
     [ -d "$TEST_HOME/.claude/claude-overlord/sounds" ]
 }
 
-# --- Script Installation Tests ---
+# --- Script Installation ---
+# The hook script must be copied and made executable.
 
 @test "copies hook script to hooks directory" {
     run "$PROJECT_ROOT/install.sh"
@@ -44,18 +61,16 @@ teardown() {
     [ -x "$TEST_HOME/.claude/hooks/claude-overlord.sh" ]
 }
 
-# --- Sound Installation Tests ---
+# --- Sound Installation ---
 
 @test "copies sounds to destination" {
     run "$PROJECT_ROOT/install.sh"
     [ "$status" -eq 0 ]
-    # Should have copied the test_char directory
-    [ -d "$TEST_HOME/.claude/claude-overlord/sounds/test_char" ] || \
-    [ -f "$TEST_HOME/.claude/claude-overlord/sounds/test_char/test.wav" ] || \
     [ -d "$TEST_HOME/.claude/claude-overlord/sounds" ]
 }
 
-# --- Settings Configuration Tests ---
+# --- Settings Configuration ---
+# The installer must create or merge settings.json with hook configuration.
 
 @test "creates settings.json when it does not exist" {
     run "$PROJECT_ROOT/install.sh"
@@ -73,7 +88,6 @@ teardown() {
 }
 
 @test "creates backup when settings.json exists" {
-    # Create existing settings
     mkdir -p "$TEST_HOME/.claude"
     echo '{"existing": true}' > "$TEST_HOME/.claude/settings.json"
 
@@ -83,19 +97,17 @@ teardown() {
 }
 
 @test "merges with existing settings.json" {
-    # Create existing settings with some content
     mkdir -p "$TEST_HOME/.claude"
     echo '{"existing_key": "existing_value"}' > "$TEST_HOME/.claude/settings.json"
 
     run "$PROJECT_ROOT/install.sh"
     [ "$status" -eq 0 ]
 
-    # Check that both existing and new content are present
     run cat "$TEST_HOME/.claude/settings.json"
     [[ "$output" == *"hooks"* ]]
 }
 
-# --- Output Messages Tests ---
+# --- User Feedback ---
 
 @test "displays installation progress" {
     run "$PROJECT_ROOT/install.sh"
@@ -111,7 +123,8 @@ teardown() {
     [[ "$output" == *"jq"* ]] || [ "$status" -eq 0 ]
 }
 
-# --- Idempotency Tests ---
+# --- Idempotency ---
+# Running the installer multiple times should be safe.
 
 @test "can be run multiple times safely" {
     run "$PROJECT_ROOT/install.sh"
