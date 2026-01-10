@@ -1,6 +1,6 @@
 # Claude Overlord
 
-Starcraft notification sounds for Claude Code. When your AI agent needs attention, it speaks to you in the voice of iconic SC2 units.
+Starcraft notification sounds for Claude Code. Because we're all managing the swarm now. 
 
 ## What it does
 
@@ -33,7 +33,3 @@ cd claude-overlord
 - Battlecruiser
 - Carrier
 - And more...
-
-## License
-
-MIT
