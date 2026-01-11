@@ -151,3 +151,25 @@ teardown() {
     run bash -c 'echo "" | "$PROJECT_ROOT/claude-overlord.sh"'
     [ "$status" -eq 0 ]
 }
+
+# --- Playback Logging ---
+# Log each clip played for debugging and clip analysis.
+
+@test "logs playback when log directory exists" {
+    create_mock_sounds
+    mkdir -p "$TEST_HOME/.claude/claude-overlord"
+    export CLAUDE_OVERLORD_LOG="$TEST_HOME/.claude/claude-overlord/playback.log"
+    run bash -c 'echo "{\"session_id\":\"test\"}" | "$PROJECT_ROOT/claude-overlord.sh"'
+    [ "$status" -eq 0 ]
+    [ -f "$CLAUDE_OVERLORD_LOG" ]
+    # Log should contain character name and clip filename
+    grep -q "marine" "$CLAUDE_OVERLORD_LOG" || grep -q "zealot" "$CLAUDE_OVERLORD_LOG" || grep -q "zergling" "$CLAUDE_OVERLORD_LOG"
+}
+
+@test "skips logging when log directory does not exist" {
+    create_mock_sounds
+    export CLAUDE_OVERLORD_LOG="$TEST_HOME/nonexistent/playback.log"
+    run bash -c 'echo "{\"session_id\":\"test\"}" | "$PROJECT_ROOT/claude-overlord.sh"'
+    [ "$status" -eq 0 ]
+    [ ! -f "$CLAUDE_OVERLORD_LOG" ]
+}

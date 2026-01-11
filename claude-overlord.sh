@@ -78,4 +78,11 @@ sound_file="${sounds[$sound_index]}"
 # Play sound (non-blocking via &, afplay is macOS native)
 afplay "$sound_file" &
 
+# Log playback for debugging and clip analysis
+LOG_FILE="${CLAUDE_OVERLORD_LOG:-$HOME/.claude/claude-overlord/playback.log}"
+LOG_DIR=$(dirname "$LOG_FILE")
+if [ -d "$LOG_DIR" ]; then
+  echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") $character $(basename "$sound_file")" >> "$LOG_FILE"
+fi
+
 exit 0
