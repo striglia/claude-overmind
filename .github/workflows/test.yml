@@ -30,6 +30,7 @@ jobs:
           chmod +x install.sh
           chmod +x download-sound.sh
           chmod +x clip-sounds.sh
+          chmod +x subdivide-clip.sh
 
       - name: Run tests
         run: bats tests/
@@ -46,4 +47,4 @@ jobs:
 
       - name: Run ShellCheck
         run: |
-          shellcheck claude-overlord.sh install.sh download-sound.sh clip-sounds.sh || true
+          shellcheck claude-overlord.sh install.sh download-sound.sh clip-sounds.sh subdivide-clip.sh || true
