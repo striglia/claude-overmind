@@ -33,3 +33,21 @@ cd claude-overlord
 - Battlecruiser
 - Carrier
 - And more...
+
+## Live Monitoring
+
+Run `./watch.sh` to see a colorized, real-time view of hook events:
+
+```
+Claude Overlord - Live Hook Monitor
+====================================
+
+Recent history:
+12:34:56 [abc123] Stop    marine       ready.wav
+
+--- Live ---
+
+12:35:02 [xyz789] Notify  zealot       my-life-for-aiur.wav
+```
+
+Each session gets a consistent color based on its ID, making it easy to track multiple Claude sessions at once.
