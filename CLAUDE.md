@@ -8,6 +8,7 @@ Starcraft notification sounds for Claude Code - plays character voice lines when
 |------|---------|
 | Test sound script | `echo '{"session_id":"test123"}' \| ./claude-overlord.sh` |
 | Play test sound | `afplay sounds/marine/ready.wav` |
+| Watch hooks live | `./watch.sh` |
 | Check jq installed | `jq --version` |
 | Install jq | `brew install jq` |
 
@@ -55,6 +56,25 @@ echo '{"session_id":"xyz789","hook_event_name":"Stop"}' | ./claude-overlord.sh
 1. Create character directory: `mkdir -p sounds/marine`
 2. Add .wav/.mp3/.aiff files
 3. Test: `afplay sounds/marine/ready.wav`
+
+### Live hook monitoring
+
+Run `./watch.sh` to see a colorized, real-time view of hook events:
+
+```
+Claude Overlord - Live Hook Monitor
+====================================
+
+Recent history:
+12:34:56 [abc123] Stop    marine       ready.wav
+
+--- Live ---
+
+12:35:02 [xyz789] Notify  zealot       my-life-for-aiur.wav
+12:35:10 [abc123] Stop    marine       job-done.wav
+```
+
+Each session gets a consistent color based on its ID, making it easy to track multiple Claude sessions at once.
 
 ## Installation (for users)
 

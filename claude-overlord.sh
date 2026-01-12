@@ -82,7 +82,9 @@ afplay "$sound_file" &
 LOG_FILE="${CLAUDE_OVERLORD_LOG:-$HOME/.claude/claude-overlord/playback.log}"
 LOG_DIR=$(dirname "$LOG_FILE")
 if [ -d "$LOG_DIR" ]; then
-  echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") $character $(basename "$sound_file")" >> "$LOG_FILE"
+  # Log format: timestamp session_prefix hook_event character sound_file
+  session_prefix="${session_id:0:6}"
+  echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") $session_prefix $hook_event $character $(basename "$sound_file")" >> "$LOG_FILE"
 fi
 
 exit 0
