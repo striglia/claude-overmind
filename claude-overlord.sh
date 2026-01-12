@@ -35,11 +35,11 @@ if [ ! -d "$SOUND_DIR" ]; then
   exit 0
 fi
 
-# Get list of character directories
+# Get list of character directories (sorted for deterministic assignment)
 characters=()
 while IFS= read -r -d '' dir; do
   characters+=("$(basename "$dir")")
-done < <(find "$SOUND_DIR" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null)
+done < <(find "$SOUND_DIR" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null | sort -z)
 
 if [ ${#characters[@]} -eq 0 ]; then
   exit 0
@@ -82,7 +82,9 @@ afplay "$sound_file" &
 LOG_FILE="${CLAUDE_OVERLORD_LOG:-$HOME/.claude/claude-overlord/playback.log}"
 LOG_DIR=$(dirname "$LOG_FILE")
 if [ -d "$LOG_DIR" ]; then
-  echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") $character $(basename "$sound_file")" >> "$LOG_FILE"
+  # Log format: timestamp session_prefix hook_event character sound_file
+  session_prefix="${session_id:0:6}"
+  echo "$(date -u +"%Y-%m-%dT%H:%M:%SZ") $session_prefix $hook_event $character $(basename "$sound_file")" >> "$LOG_FILE"
 fi
 
 exit 0
