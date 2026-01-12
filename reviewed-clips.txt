@@ -1,0 +1,23 @@
+# Reviewed short clips (under 1 second)
+# Format: filename | status (ok/removed)
+#
+# Clips marked "ok" are approved despite being short
+# Clips marked "removed" were truncated/mangled and deleted
+
+marine/clip_021.wav | ok
+marine/clip_043.wav | ok
+battlecruiser/clip_033.wav | ok
+battlecruiser/clip_004.wav | ok
+marine/clip_030.wav | ok
+siegetank/clip_038.wav | ok
+
+carrier/clip_019.wav | removed
+carrier/clip_020.wav | removed
+carrier/clip_009.wav | removed
+stalker/clip_034.wav | removed
+stalker/clip_031.wav | removed
+stalker/clip_012.wav | removed
+scv/clip_012.wav | removed
+marine/clip_039.wav | removed
+darktemplar/clip_005.wav | removed
+darktemplar/clip_019.wav | removed
